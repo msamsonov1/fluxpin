@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FluxPin: Magnetic Flux-Pinned Lunar Rover-Trailer Hitch Safeguard</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- MathJax Configuration and Script (Strictly before loading library) -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #03050a;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .formula-box {
+      background-color: rgba(6, 9, 18, 0.95);
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      box-shadow: inset 0 0 15px rgba(6, 182, 212, 0.08);
+    }
+    .neon-border-cyan {
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+    }
+    .neon-border-amber {
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+    }
+    .neon-border-rose {
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #080c14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #06b6d4;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#03050a] selection:bg-cyan-500 selection:text-black">
+
+  <!-- Header & Navigation Bar -->
+  <header class="sticky top-0 z-50 border-b border-gray-800 bg-[#060a12]/90 backdrop-blur-md px-4 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-cyan-950/60 border border-cyan-500/40 rounded-lg text-cyan-400">
+        <i data-lucide="magnet" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-lg text-white tracking-wider">FLUXPIN</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-cyan-950 text-cyan-300 border border-cyan-500/30">NASA SBIR SUBTOPIC H8.01</span>
+        </div>
+        <p class="text-xs text-gray-400">Cryogenic Mechanisms & Superconducting Levitation Joint Safeguard</p>
+      </div>
+    </div>
+
+    <!-- Active State Ribbon -->
+    <div class="flex items-center gap-2">
+      <div id="hitchStateBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-full border border-emerald-500/40 bg-emerald-950/40 text-emerald-400 text-xs font-mono font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="hitchStateText">PINNED · NOMINAL LEVITATION</span>
+      </div>
+      <div id="cryoStateBadge" class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/30 text-cyan-300 text-xs font-mono">
+        <i data-lucide="snowflake" class="w-3.5 h-3.5"></i>
+        <span>YBCO HTS: 77.2 K</span>
+      </div>
+    </div>
+
+    <!-- Tab Buttons -->
+    <nav class="flex items-center space-x-1 bg-gray-950/80 p-1 rounded-xl border border-gray-800">
+      <button id="tabBtnSim" onclick="switchTab('sim')" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-white bg-cyan-600/30 border border-cyan-500/50">
+        <i data-lucide="gauge" class="w-3.5 h-3.5"></i>
+        <span>Telemetry HUD</span>
+      </button>
+      <button id="tabBtnPhysics" onclick="switchTab('physics')" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-gray-400 hover:text-white hover:bg-gray-800/50">
+        <i data-lucide="atom" class="w-3.5 h-3.5"></i>
+        <span>Core Physics</span>
+      </button>
+      <button id="tabBtnProposal" onclick="switchTab('proposal')" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-gray-400 hover:text-white hover:bg-gray-800/50">
+        <i data-lucide="scroll-text" class="w-3.5 h-3.5"></i>
+        <span>NASA Proposal</span>
+      </button>
+      <button id="tabBtnARR" onclick="switchTab('arr')" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-gray-400 hover:text-white hover:bg-gray-800/50">
+        <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+        <span>Commercial ARR</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Content View Area -->
+  <main class="flex-grow p-4 lg:p-6 max-w-[1680px] w-full mx-auto space-y-6">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: LIVE SIMULATION & TELEMETRY HUD     -->
+    <!-- ========================================== -->
+    <div id="viewSim" class="space-y-6">
+      
+      <!-- Top Alert Notification Bar (Dynamic) -->
+      <div id="alarmBanner" class="hidden p-3 rounded-xl border border-rose-500/50 bg-rose-950/40 text-rose-300 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400 animate-bounce"></i>
+          <div>
+            <span class="font-bold text-sm">CRITICAL PINNING DECOUPLING WARNING:</span>
+            <span class="text-xs text-rose-200 ml-1">Transverse impact velocity $v$ exceeding critical Lorentz pinning barrier $F_p$. Automated differential chassis torque active!</span>
+          </div>
+        </div>
+        <button onclick="emergencyResetPinning()" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs font-bold rounded-lg transition">FORCE RE-PIN</button>
+      </div>
+
+      <!-- Main Visual & Phase Space Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: 2D Interactive Hitch & Terrain Mechanical Canvas -->
+        <div class="lg:col-span-7 bg-gray-900/40 border border-gray-800 rounded-2xl p-4 flex flex-col space-y-3 backdrop-blur neon-border-cyan relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+              <h2 class="text-sm font-semibold uppercase tracking-wider text-white">HTS Flux-Pinned Coupling Mechanical Visualization</h2>
+            </div>
+            <div class="text-[11px] font-mono text-gray-400 flex items-center gap-3">
+              <span>LAT: Shackleton Rim (89.9°S)</span>
+              <span id="canvasFpsBadge" class="text-cyan-400">FPS: 60</span>
+            </div>
+          </div>
+
+          <!-- Canvas Container -->
+          <div class="relative w-full h-[360px] bg-[#03060d] rounded-xl border border-gray-800/80 overflow-hidden">
+            <canvas id="roverCanvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+            
+            <!-- Canvas HUD Overlay Badges -->
+            <div class="absolute top-3 left-3 flex flex-col space-y-1.5 pointer-events-none">
+              <div class="px-2.5 py-1 bg-gray-950/80 border border-gray-800 rounded-md text-[11px] font-mono text-cyan-300">
+                Joint Separation Gap: <span id="hudGap" class="font-bold text-white">14.2 mm</span>
+              </div>
+              <div class="px-2.5 py-1 bg-gray-950/80 border border-gray-800 rounded-md text-[11px] font-mono text-cyan-300">
+                Angular Misalignment $\theta$: <span id="hudTilt" class="font-bold text-white">1.2°</span>
+              </div>
+              <div class="px-2.5 py-1 bg-gray-950/80 border border-gray-800 rounded-md text-[11px] font-mono text-cyan-300">
+                Pinned Vortices Density: <span id="hudVortices" class="font-bold text-emerald-400">4.82 × 10¹⁴ m⁻²</span>
+              </div>
+            </div>
+
+            <div class="absolute bottom-3 right-3 flex items-center space-x-2 pointer-events-none">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono bg-black/70 border border-gray-700 text-gray-300">
+                Drag on Sled to inject lateral impulse
+              </span>
+            </div>
+          </div>
+
+          <!-- Quick Interactive Terrain Perturbation Controls -->
+          <div class="flex flex-wrap items-center justify-between pt-1 gap-2">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs text-gray-400 font-medium">Fault Injection:</span>
+              <button onclick="injectCraterDrop()" class="px-3 py-1.5 bg-gray-800/90 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-lg text-xs font-mono transition flex items-center space-x-1.5">
+                <i data-lucide="arrow-down-right" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Crater Rille Drop (35 cm)</span>
+              </button>
+              <button onclick="injectBoulderSlam()" class="px-3 py-1.5 bg-gray-800/90 hover:bg-gray-700 text-gray-200 border border-gray-700 rounded-lg text-xs font-mono transition flex items-center space-x-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-rose-400"></i>
+                <span>Transverse Boulder Impulse</span>
+              </button>
+            </div>
+            <div class="flex items-center space-x-2">
+              <label class="text-xs text-gray-400 font-mono">Auto-Torque Re-centering:</label>
+              <button id="toggleObserverBtn" onclick="toggleAutoCorrection()" class="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-cyan-600/30 text-cyan-300 border border-cyan-500/60">
+                ACTIVE (CLOSED-LOOP)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Primary Phase-Space Diagnostic Chart (v vs. Φ) -->
+        <div class="lg:col-span-5 bg-gray-900/40 border border-gray-800 rounded-2xl p-4 flex flex-col space-y-3 backdrop-blur">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-violet-400"></span>
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-white">Diagnostic Phase-Space</h2>
+              </div>
+              <p class="text-[11px] text-gray-400">Relative Velocity ($v$) vs. Trapped Magnetic Flux ($\Phi$)</p>
+            </div>
+            <div class="px-2 py-1 rounded bg-gray-950 border border-gray-800 text-[10px] font-mono text-violet-300">
+              BEAN CRITICAL MODEL
+            </div>
+          </div>
+
+          <!-- Phase-Space Chart Canvas -->
+          <div class="relative w-full h-[360px] p-2 bg-[#03060d] rounded-xl border border-gray-800/80">
+            <canvas id="phaseSpaceChart"></canvas>
+          </div>
+
+          <!-- Quick Metrics Bar below Phase Chart -->
+          <div class="grid grid-cols-3 gap-2 pt-1 text-center font-mono text-xs">
+            <div class="p-2 rounded-lg bg-gray-950/60 border border-gray-800">
+              <span class="text-[10px] text-gray-500 block">TRANSVERSE VEL ($v$)</span>
+              <span id="metricV" class="font-bold text-cyan-400 text-sm">0.84 m/s</span>
+            </div>
+            <div class="p-2 rounded-lg bg-gray-950/60 border border-gray-800">
+              <span class="text-[10px] text-gray-500 block">FLUX DENSITY ($\Phi$)</span>
+              <span id="metricPhi" class="font-bold text-violet-400 text-sm">1.18 Wb</span>
+            </div>
+            <div class="p-2 rounded-lg bg-gray-950/60 border border-gray-800">
+              <span class="text-[10px] text-gray-500 block">PINNING FORCE ($F_p$)</span>
+              <span id="metricFp" class="font-bold text-emerald-400 text-sm">620 N</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Secondary Telemetry Plots & Dynamic Closed-Loop Panel -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Plot 1: Flux Leakage / Slip Drift vs Time -->
+        <div class="lg:col-span-4 bg-gray-900/40 border border-gray-800 rounded-2xl p-4 flex flex-col space-y-2 backdrop-blur">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-300">Magnetic Flux Creep $\Delta\Phi(t)$ & Slip Displacement</h3>
+            <span class="text-[10px] font-mono text-cyan-400">HALL ARRAY (100 Hz)</span>
+          </div>
+          <div class="h-44 w-full">
+            <canvas id="fluxCreepChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Plot 2: Chassis Wheel Differential Torque Compensation -->
+        <div class="lg:col-span-4 bg-gray-900/40 border border-gray-800 rounded-2xl p-4 flex flex-col space-y-2 backdrop-blur">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-300">Chassis Braking & Vector Torque Response</h3>
+            <span class="text-[10px] font-mono text-emerald-400">4-WHEEL BLDC DRIVE</span>
+          </div>
+          <div class="h-44 w-full">
+            <canvas id="torqueChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Real-Time Sliders & Actuator Config -->
+        <div class="lg:col-span-4 bg-gray-900/40 border border-gray-800 rounded-2xl p-4 flex flex-col justify-between backdrop-blur space-y-3">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-white">Closed-Loop Parameters</h3>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-800">NAV-CPU CORE 0</span>
+            </div>
+            
+            <!-- Slider 1: Rover Speed -->
+            <div class="space-y-1 my-2">
+              <div class="flex justify-between text-xs font-mono">
+                <span class="text-gray-400">Rover Velocity Target ($v_0$)</span>
+                <span id="sliderVelVal" class="text-cyan-300">2.2 m/s (7.9 km/h)</span>
+              </div>
+              <input type="range" id="inputVelocity" min="0.5" max="6.0" step="0.1" value="2.2" oninput="updateControls()" class="w-full accent-cyan-500 bg-gray-800 h-1.5 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Slider 2: Sled Cargo Mass -->
+            <div class="space-y-1 my-2">
+              <div class="flex justify-between text-xs font-mono">
+                <span class="text-gray-400">Cargo Sled Payload Mass ($m_t$)</span>
+                <span id="sliderMassVal" class="text-cyan-300">350 kg</span>
+              </div>
+              <input type="range" id="inputMass" min="50" max="800" step="10" value="350" oninput="updateControls()" class="w-full accent-cyan-500 bg-gray-800 h-1.5 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <!-- Slider 3: Cryocooler Temperature -->
+            <div class="space-y-1 my-2">
+              <div class="flex justify-between text-xs font-mono">
+                <span class="text-gray-400">YBCO Puck Temperature ($T_{cryo}$)</span>
+                <span id="sliderTempVal" class="text-cyan-300">77.4 K</span>
+              </div>
+              <input type="range" id="inputTemp" min="50" max="93" step="0.5" value="77.4" oninput="updateControls()" class="w-full accent-cyan-500 bg-gray-800 h-1.5 rounded-lg appearance-none cursor-pointer">
+            </div>
+          </div>
+
+          <!-- Status Indicator Footer -->
+          <div class="p-2.5 rounded-xl bg-gray-950/70 border border-gray-800/80 flex items-center justify-between text-xs font-mono">
+            <span class="text-gray-400">HTS Trapped Field Reserve:</span>
+            <span id="fieldReserveTxt" class="text-emerald-400 font-bold">88.4% (Margin > 3.8×)</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: CORE PHYSICS & MATHEMATICAL MODEL   -->
+    <!-- ========================================== -->
+    <div id="viewPhysics" class="hidden space-y-6">
+      
+      <!-- Physics Banner -->
+      <div class="p-6 rounded-2xl bg-gradient-to-r from-gray-900/80 via-cyan-950/30 to-gray-900/80 border border-gray-800">
+        <h2 class="text-xl font-bold text-white mb-2 flex items-center space-x-2">
+          <i data-lucide="atom" class="w-6 h-6 text-cyan-400"></i>
+          <span>Superconducting Flux Pinning & Non-Contact Mechanical Kinematics</span>
+        </h2>
+        <p class="text-sm text-gray-300 max-w-4xl">
+          High-Temperature Superconductors (such as melt-textured $\text{YBa}_2\text{Cu}_3\text{O}_{7-\delta}$) do not simply repel magnetic fields via the Meissner effect ($B=0$); they operate in the Shubnikov Type-II regime. Microscopic normal conducting defects trap quantized magnetic flux vortices (fluxoids $\phi_0 = h/2e \approx 2.07 \times 10^{-15}\text{ Wb}$), establishing an ultra-stiff, 6-degree-of-freedom passive frictionless magnetic spring.
+        </p>
+      </div>
+
+      <!-- 4 Core Physics Detail Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Card 1: Bean's Critical State & Pinning Force -->
+        <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold uppercase text-cyan-300 tracking-wider">1. Critical State & Maximum Pinning Force Density</h3>
+            <span class="text-xs font-mono text-gray-500">LORENTZ COUPLING</span>
+          </div>
+          <p class="text-xs text-gray-300">
+            The pinning force density $\mathbf{F}_p$ balancing the magnetic gradient across the puck is dictated by the macroscopic critical current density $J_c(B, T)$ according to Bean’s critical state formulation:
+          </p>
+          <div class="formula-box p-3 rounded-lg border border-gray-800 text-center text-cyan-300 text-sm overflow-x-auto my-2">
+            $$\mathbf{F}_p = \mathbf{J}_c \times \mathbf{B} = \mu_0 (\nabla \times \mathbf{H}) \times \mathbf{B}$$
+          </div>
+          <p class="text-xs text-gray-400">
+            For an axisymmetric permanent magnet puck (NdFeB Grade N52, $B_r = 1.48\text{ T}$) interacting with a field-cooled HTS cylinder, the total vertical restoration force $F_z$ and lateral shear stiffness $k_x$ are given by:
+          </p>
+          <div class="formula-box p-3 rounded-lg border border-gray-800 text-center text-cyan-300 text-sm overflow-x-auto my-2">
+            $$F_z(z) = \frac{\pi \mu_0 M_0 J_c R^2}{2} \int_0^\infty \frac{J_1(k R)}{k} e^{-k z} \left(1 - e^{-k d}\right) dk$$
+          </div>
+          <p class="text-[11px] text-gray-400 leading-relaxed">
+            Where $R$ is puck radius, $d$ is superconducting layer thickness, and $z$ is the levitation gap distance. No mechanical bearings, lubricants, or flexible bellow seals are exposed to the abrasive, vacuum-welding lunar regolith dust.
+          </p>
+        </div>
+
+        <!-- Card 2: Flux Creep & Anderson-Kim Thermal Activation -->
+        <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold uppercase text-amber-300 tracking-wider">2. Thermally Activated Flux Creep & Slip Barrier</h3>
+            <span class="text-xs font-mono text-gray-500">VORTEX HOPPING</span>
+          </div>
+          <p class="text-xs text-gray-300">
+            When terrain impact accelerations generate a shear force approaching $F_p$, magnetic flux bundles overcome the pinning potential well depth $U_0$. The flux creep rate $v_{\text{creep}}$ produces an internal electric field $\mathbf{E}$:
+          </p>
+          <div class="formula-box p-3 rounded-lg border border-gray-800 text-center text-amber-300 text-sm overflow-x-auto my-2">
+            $$\mathbf{E}(J) = E_c \left( \frac{J}{J_c} \right)^n = \mathbf{B} \times \mathbf{v}_{\text{creep}} \exp\left[ -\frac{U_0}{k_B T} \left( 1 - \frac{J}{J_c} \right) \right]$$
+          </div>
+          <p class="text-xs text-gray-400">
+            The power-law exponent $n = U_0 / (k_B T)$ governs the transition between elastic pinning and dissipative viscous flux flow. If dynamic terrain shock velocity $v_s = \frac{d\delta}{dt}$ creates a local vortex velocity that exceeds critical pinning threshold:
+          </p>
+          <div class="formula-box p-3 rounded-lg border border-gray-800 text-center text-amber-300 text-sm overflow-x-auto my-2">
+            $$\frac{d\Phi}{dt} = - \oint (\mathbf{v}_{\text{rel}} \times \mathbf{B}) \cdot d\mathbf{l} - \mathcal{R}_{\text{slip}} J_c A$$
+          </div>
+          <p class="text-[11px] text-gray-400 leading-relaxed">
+            Unmitigated slip leads to progressive flux depinning, magnetic hysteresis loop degradation, and catastrophic physical separation of the cargo sled trailer into deep lunar impact craters.
+          </p>
+        </div>
+
+        <!-- Card 3: Closed-Loop Inversion & Wheel Torque Vectoring -->
+        <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold uppercase text-emerald-300 tracking-wider">3. State Observer Inversion & Autonomous Torque Vectoring</h3>
+            <span class="text-xs font-mono text-gray-500">CHASSIS BRAKING</span>
+          </div>
+          <p class="text-xs text-gray-300">
+            A ring of 8 micro-Hall effect sensors embedded around the cryogenic cryostat perimeter samples the local field gradient $\nabla \mathbf{B}$ at 1 kHz. The autonomous state observer computes the instantaneous transverse hitch displacement $\boldsymbol{\delta}_h$:
+          </p>
+          <div class="formula-box p-3 rounded-lg border border-gray-800 text-center text-emerald-300 text-sm overflow-x-auto my-2">
+            $$\hat{\boldsymbol{\delta}}_h(t) = \left( \mathbf{H}^T \mathbf{W} \mathbf{H} \right)^{-1} \mathbf{H}^T \mathbf{W} \left[ \mathbf{B}_{\text{measured}} - \mathbf{B}_0 \right]$$
+          </div>
+          <p class="text-xs text-gray-400">
+            To prevent joint slip, the navigation computer calculates the required chassis counter-torque $\tau_c$ and independent wheel braking force $\Delta F_{\text{wheels}}$ to counteract trailer inertia $m_t \ddot{\mathbf{x}}_t$:
+          </p>
+          <div class="formula-box p-3 rounded-lg border border-gray-800 text-center text-emerald-300 text-sm overflow-x-auto my-2">
+            $$\boldsymbol{\tau}_{\text{cmd}} = -K_p \hat{\boldsymbol{\delta}}_h - K_d \frac{d\hat{\boldsymbol{\delta}}_h}{dt} - \mathbf{r}_{h/cg} \times m_t \left( \mathbf{a}_{\text{rover}} - \mathbf{g}_{\text{lunar}} \right)$$
+          </div>
+          <p class="text-[11px] text-gray-400 leading-relaxed">
+            By independently altering the left-to-right wheel slip ratio within 12 ms, the rover pulls the cryogenic puck directly back under the center of the permanent magnet assembly, re-entering the zero-loss pinning corridor.
+          </p>
+        </div>
+
+        <!-- Card 4: Cryogenic Hardware & Lunar Thermal Shielding -->
+        <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold uppercase text-violet-300 tracking-wider">4. Substrate Cryo-Architecture & Permittivity</h3>
+            <span class="text-xs font-mono text-gray-500">77 K PASSIVE SHIELD</span>
+          </div>
+          <p class="text-xs text-gray-300">
+            Operating in lunar permanently shadowed regions (PSRs) at 40 K or illuminated rims at 380 K requires high thermal isolation. The HTS puck is anchored to a dual-stage Stirling pulse-tube cryocooler supported by titanium flexures:
+          </p>
+          <div class="formula-box p-3 rounded-lg border border-gray-800 text-center text-violet-300 text-sm overflow-x-auto my-2">
+            $$\dot{Q}_{\text{leak}} = \frac{A_{\text{rad}} \sigma \left(T_{\text{ext}}^4 - T_{\text{cryo}}^4\right)}{\frac{1}{\varepsilon_{\text{outer}}} + \frac{2N}{\varepsilon_{\text{MLI}}} + \frac{1}{\varepsilon_{\text{HTS}}}} + \frac{k_{\text{flex}} A_{\text{flex}}}{L} \Delta T$$
+          </div>
+          <p class="text-xs text-gray-400">
+            Key physical material parameters for the prototype mechanism:
+          </p>
+          <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 text-xs font-mono space-y-1 text-gray-300">
+            <div class="flex justify-between"><span>HTS Crystal:</span> <span class="text-cyan-300">Melt-Textured YBCO + 20wt% Ag</span></div>
+            <div class="flex justify-between"><span>Critical Temp ($T_c$):</span> <span class="text-cyan-300">92.5 K (Base operating 77 K)</span></div>
+            <div class="flex justify-between"><span>Critical Current ($J_c$ at 77 K):</span> <span class="text-cyan-300">> 4.5 × 10⁴ A/cm² in 1.5 T field</span></div>
+            <div class="flex justify-between"><span>Permanent Magnet:</span> <span class="text-cyan-300">Halbach Array NdFeB (N52-SH rated to 150°C)</span></div>
+            <div class="flex justify-between"><span>Multi-Layer Insulation (MLI):</span> <span class="text-cyan-300">40 layers aluminized Mylar + Dacron net</span></div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: $225,000 NASA SBIR PROPOSAL         -->
+    <!-- ========================================== -->
+    <div id="viewProposal" class="hidden space-y-6">
+      
+      <!-- Solicitation Banner -->
+      <div class="p-6 rounded-2xl bg-gradient-to-r from-blue-950/40 via-cyan-950/30 to-gray-900 border border-cyan-800/40 relative overflow-hidden">
+        <div class="relative z-10 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-2 text-cyan-400 font-mono text-xs font-semibold mb-1">
+              <span>NASA SBIR 2026 PHASE I</span>
+              <span>•</span>
+              <span>TOPIC H8.01: CRYOGENIC ACTUATORS & LUNAR MECHANISMS</span>
+            </div>
+            <h2 class="text-2xl font-bold text-white tracking-tight">FluxPin: Autonomous High-Temperature Superconducting Hitch Coupling for Heavy Lunar Surface Mobility</h2>
+          </div>
+          <div class="bg-gray-950/80 border border-cyan-500/40 p-4 rounded-xl text-right">
+            <span class="text-xs text-gray-400 block font-mono">PHASE I SBIR CONTRACT</span>
+            <span class="text-2xl font-bold text-cyan-400 font-mono">$225,000</span>
+            <span class="text-[11px] text-gray-400 block font-mono">Period of Performance: 6 Months</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- University Partner / STTR Allocation Callout -->
+      <div class="bg-gray-900/60 border border-cyan-500/30 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center space-x-4">
+          <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400">
+            <i data-lucide="building-2" class="w-8 h-8"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Academic Research Subcontract (STTR Focus Partner)</h3>
+            <p class="text-xs text-gray-300">University of Central Florida (UCF) — Center for Advanced Turbomachinery and Energy Research (CATER) Cryo-Labs</p>
+            <p class="text-[11px] text-gray-400 mt-1">Lead Academic Investigator: Cryogenic Superconducting Mechanics Group | Cryostat Vacuum Chamber & High-G Drop Rig Testing</p>
+          </div>
+        </div>
+        <div class="px-4 py-2 bg-amber-950/50 border border-amber-500/40 rounded-xl text-right shrink-0">
+          <span class="text-[10px] text-amber-300 font-mono uppercase block">Subcontract Allocation (30.0%)</span>
+          <span class="text-xl font-bold text-amber-400 font-mono">$67,500</span>
+          <span class="text-[10px] text-gray-400 block font-mono">Firm Fixed Price Sub-award</span>
+        </div>
+      </div>
+
+      <!-- Work Breakdown Schedule (Months 1–6) -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-300 flex items-center space-x-2">
+          <i data-lucide="milestone" class="w-4 h-4 text-cyan-400"></i>
+          <span>Phase I Work Breakdown Schedule & Verification Milestones</span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          
+          <!-- Month 1-2 -->
+          <div class="bg-gray-900/40 border border-gray-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex justify-between items-center text-xs font-mono mb-2">
+                <span class="text-cyan-400 font-bold">MONTH 1–2</span>
+                <span class="px-1.5 py-0.5 rounded bg-gray-800 text-[10px] text-gray-300">TRL 2 → 3</span>
+              </div>
+              <h4 class="text-sm font-bold text-white mb-1">Non-Linear Kinetic & Critical Current Model</h4>
+              <p class="text-xs text-gray-400 leading-relaxed">
+                Formulate comprehensive 3D finite-element electromagnetic model in COMSOL coupling Bean's critical state with Kim-Anderson thermal activation under lunar vacuum conditions.
+              </p>
+            </div>
+            <div class="text-[11px] font-mono text-cyan-300 border-t border-gray-800 pt-2">
+              Deliverable: High-fidelity numeric state space matrix verified against benchmark YBCO puck tests.
+            </div>
+          </div>
+
+          <!-- Month 3 -->
+          <div class="bg-gray-900/40 border border-gray-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex justify-between items-center text-xs font-mono mb-2">
+                <span class="text-cyan-400 font-bold">MONTH 3</span>
+                <span class="px-1.5 py-0.5 rounded bg-gray-800 text-[10px] text-gray-300">TRL 3</span>
+              </div>
+              <h4 class="text-sm font-bold text-white mb-1">State Observer & Fast Flux-Inversion Algorithm</h4>
+              <p class="text-xs text-gray-400 leading-relaxed">
+                Synthesize high-speed matrix inversion software capable of deriving relative hitch slip and angular tilt from 8-channel Hall array signals within &lt; 2.0 milliseconds execution latency.
+              </p>
+            </div>
+            <div class="text-[11px] font-mono text-cyan-300 border-t border-gray-800 pt-2">
+              Deliverable: Microcontroller C++ firmware running on NASA radiation-tolerant Rad750/LEON4 emulator.
+            </div>
+          </div>
+
+          <!-- Month 4-5 -->
+          <div class="bg-gray-900/40 border border-gray-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex justify-between items-center text-xs font-mono mb-2">
+                <span class="text-cyan-400 font-bold">MONTH 4–5</span>
+                <span class="px-1.5 py-0.5 rounded bg-gray-800 text-[10px] text-gray-300">TRL 3 → 4</span>
+              </div>
+              <h4 class="text-sm font-bold text-white mb-1">Closed-Loop Torque Vectoring Hardware-in-the-Loop</h4>
+              <p class="text-xs text-gray-400 leading-relaxed">
+                Integrate simulated lunar rover 4-wheel independent electric motor dynamometer bench with physical cryo-cooled YBCO test rig at UCF CATER facilities.
+              </p>
+            </div>
+            <div class="text-[11px] font-mono text-cyan-300 border-t border-gray-800 pt-2">
+              Deliverable: Demonstration of 100% recovery from 40 cm simulated crater rille drop without mechanical decouple.
+            </div>
+          </div>
+
+          <!-- Month 6 -->
+          <div class="bg-gray-900/40 border border-gray-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex justify-between items-center text-xs font-mono mb-2">
+                <span class="text-cyan-400 font-bold">MONTH 6</span>
+                <span class="px-1.5 py-0.5 rounded bg-gray-800 text-[10px] text-gray-300">TRL 4</span>
+              </div>
+              <h4 class="text-sm font-bold text-white mb-1">Phase II Flight Spec & Critical Design Review</h4>
+              <p class="text-xs text-gray-400 leading-relaxed">
+                Produce complete engineering documentation, flight mass breakdown (target &lt; 9.4 kg total payload hitch), and 12-month Phase II prototype transition test matrix.
+              </p>
+            </div>
+            <div class="text-[11px] font-mono text-cyan-300 border-t border-gray-800 pt-2">
+              Deliverable: Final Report, NASA TechPort upload, and $1.2M Phase II flight payload proposal submission.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Phase II Transition & Facility Roadmap -->
+      <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-5 space-y-3">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-white">Phase II Commercialization & Vacuum Chamber Transition Roadmap</h3>
+        <p class="text-xs text-gray-300 leading-relaxed">
+          Upon Phase I completion, Phase II ($1,250,000 / 24 months) will transition the bench prototype into a space-qualified flight unit tested inside the 
+          <strong>NASA Glenn Research Center Cryogenic Propellant Storage and Transfer Vacuum Facility</strong> and UCF’s cryogenic shaker tables. 
+          Target customers include commercial lunar payload services (CLPS) contractors, including Intuitive Machines, Astrobotic, and Blue Origin's Blue Moon cargo mobility architecture.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: COMMERCIAL & NATIONWIDE ARR BREAKDOWN-->
+    <!-- ========================================== -->
+    <div id="viewARR" class="hidden space-y-6">
+      
+      <!-- Executive Summary Card -->
+      <div class="p-6 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-cyan-950/20 to-gray-900 border border-emerald-500/40 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div class="space-y-2 max-w-3xl">
+          <div class="flex items-center space-x-2 text-emerald-400 font-mono text-xs uppercase font-semibold">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>Commercial Market Analysis & ARR Projections</span>
+          </div>
+          <h2 class="text-2xl font-bold text-white">Autonomous Magnetic Coupler & Safeguard Software Runtime Platform</h2>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            While engineered for the zero-lubricant, vacuum-welding lunar regolith of NASA Artemis, the patented flux-pinning state observer and autonomous torque-recovery controller solves high-friction joint failure, contamination jamming, and tow-trailer uncoupling across 6 multi-billion dollar terrestrial clean-tech & extreme-environment markets.
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 shrink-0">
+          <div class="p-4 bg-gray-950/80 border border-emerald-500/40 rounded-xl text-center min-w-[160px]">
+            <span class="text-[11px] font-mono text-gray-400 uppercase block">Mature Annual Recurring Revenue</span>
+            <span class="text-3xl font-extrabold text-emerald-400 font-mono">$218.4M</span>
+            <span class="text-[10px] text-gray-400 font-mono block">Pure-play software runtime</span>
+          </div>
+          <div class="p-4 bg-gray-950/80 border border-cyan-500/40 rounded-xl text-center min-w-[160px]">
+            <span class="text-[11px] font-mono text-gray-400 uppercase block">Enterprise Valuation (10× ARR)</span>
+            <span class="text-3xl font-extrabold text-cyan-400 font-mono">$2.18B</span>
+            <span class="text-[10px] text-gray-400 font-mono block">Deep-Tech Multiplier</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commercial ARR Distribution Table -->
+      <div class="bg-gray-900/40 border border-gray-800 rounded-2xl overflow-hidden backdrop-blur">
+        <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+          <h3 class="text-sm font-semibold uppercase tracking-wider text-white">Commercial Vertical Revenue Breakdown</h3>
+          <span class="text-xs font-mono text-gray-400">Civil & Commercial Clean-Tech Focus</span>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-gray-950 text-gray-400 uppercase text-[10px] border-b border-gray-800">
+              <tr>
+                <th class="p-3.5">Commercial Market Vertical</th>
+                <th class="p-3.5">Specific Target Application</th>
+                <th class="p-3.5">Software Runtime SaaS License</th>
+                <th class="p-3.5">Total Addressable Fleet</th>
+                <th class="p-3.5 text-right text-emerald-400">Mature ARR</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800 text-gray-300">
+              <tr class="hover:bg-gray-800/30 transition">
+                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                  <span>Autonomous Off-Road Mining Haulage</span>
+                </td>
+                <td class="p-3.5">Uncrewed ore trailers in ultra-abrasive dust environments (Chile Lithium / Australia Iron)</td>
+                <td class="p-3.5 text-cyan-300">$18,000 / vehicle / yr</td>
+                <td class="p-3.5">3,200 heavy autonomous haulers</td>
+                <td class="p-3.5 text-right font-bold text-emerald-400">$57.6M</td>
+              </tr>
+              <tr class="hover:bg-gray-800/30 transition">
+                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-violet-400"></span>
+                  <span>Semiconductor EUV High-Vacuum Transport</span>
+                </td>
+                <td class="p-3.5">Contact-free wafer pod transfer pods inside high-vacuum cleanrooms (Sub-3nm nodes)</td>
+                <td class="p-3.5 text-cyan-300">$32,000 / track-bay / yr</td>
+                <td class="p-3.5">1,450 cleanroom fabrication bays</td>
+                <td class="p-3.5 text-right font-bold text-emerald-400">$46.4M</td>
+              </tr>
+              <tr class="hover:bg-gray-800/30 transition">
+                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                  <span>Cryogenic LNG & Hydrogen Tanker Coupling</span>
+                </td>
+                <td class="p-3.5">Non-sparking, zero-boiloff transfer conduits & automated articulating tug linkages</td>
+                <td class="p-3.5 text-cyan-300">$14,500 / marine terminal / yr</td>
+                <td class="p-3.5">2,600 terminals & coastal tugs</td>
+                <td class="p-3.5 text-right font-bold text-emerald-400">$37.7M</td>
+              </tr>
+              <tr class="hover:bg-gray-800/30 transition">
+                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span>Artemis & Commercial Lunar Cargo (CLPS)</span>
+                </td>
+                <td class="p-3.5">Artemis LTV (Lunar Terrain Vehicle) cargo sleds, ISRU drills, regolith haulers</td>
+                <td class="p-3.5 text-cyan-300">$120,000 / flight node / yr</td>
+                <td class="p-3.5">245 surface mobility systems</td>
+                <td class="p-3.5 text-right font-bold text-emerald-400">$29.4M</td>
+              </tr>
+              <tr class="hover:bg-gray-800/30 transition">
+                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-pink-400"></span>
+                  <span>Sterile Pharmaceutical Aseptic Conveyance</span>
+                </td>
+                <td class="p-3.5">Lubricant-free, zero-particulate vial capping and biologic conveyance lines</td>
+                <td class="p-3.5 text-cyan-300">$8,200 / line / yr</td>
+                <td class="p-3.5">3,100 biologic packaging lines</td>
+                <td class="p-3.5 text-right font-bold text-emerald-400">$25.4M</td>
+              </tr>
+              <tr class="hover:bg-gray-800/30 transition">
+                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                  <span>Heavy Autonomous Precision Agriculture</span>
+                </td>
+                <td class="p-3.5">Autonomous combine-to-cart autonomous hitching over unlevel wet fields</td>
+                <td class="p-3.5 text-cyan-300">$3,500 / smart hitch / yr</td>
+                <td class="p-3.5">6,250 heavy implements</td>
+                <td class="p-3.5 text-right font-bold text-emerald-400">$21.9M</td>
+              </tr>
+            </tbody>
+            <tfoot class="bg-gray-950/80 font-bold border-t border-gray-700">
+              <tr>
+                <td colspan="4" class="p-3.5 text-right uppercase text-gray-400">Total Validated Commercial Software ARR:</td>
+                <td class="p-3.5 text-right text-emerald-400 text-sm">$218.4M / year</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Detailed Vertical Breakdown Cards (Why Incumbents Missed This) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- Deep Dive 1 -->
+        <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center space-x-2">
+            <span class="p-2 rounded-lg bg-cyan-950 text-cyan-400 border border-cyan-800"><i data-lucide="truck" class="w-4 h-4"></i></span>
+            <h4 class="text-sm font-bold text-white">Autonomous Off-Road Mining Haulage</h4>
+          </div>
+          <div>
+            <span class="text-[10px] font-mono text-cyan-300 uppercase block">Physics in 1 Sentence:</span>
+            <p class="text-xs text-gray-300">Continuous non-contact magnetic shear replaces metal pintle hitches that gall and break when fine quartz dust forms abrasive slurry with grease.</p>
+          </div>
+          <div>
+            <span class="text-[10px] font-mono text-amber-300 uppercase block">Why Incumbents Missed This:</span>
+            <p class="text-xs text-gray-400">Mining OEMs relied on heavier steel pins and automatic grease pumpers, which create grinding compounds that cause catastrophic pin shearing every 400 operating hours.</p>
+          </div>
+        </div>
+
+        <!-- Deep Dive 2 -->
+        <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center space-x-2">
+            <span class="p-2 rounded-lg bg-violet-950 text-violet-400 border border-violet-800"><i data-lucide="cpu" class="w-4 h-4"></i></span>
+            <h4 class="text-sm font-bold text-white">Semiconductor EUV High-Vacuum Transport</h4>
+          </div>
+          <div>
+            <span class="text-[10px] font-mono text-cyan-300 uppercase block">Physics in 1 Sentence:</span>
+            <p class="text-xs text-gray-300">Flux pinning locks FOUP wafer pods in 6-DOF levitation across chamber isolation valves without roller friction shed particles.</p>
+          </div>
+          <div>
+            <span class="text-[10px] font-mono text-amber-300 uppercase block">Why Incumbents Missed This:</span>
+            <p class="text-xs text-gray-400">Cleanrooms use magnetic levitation tracks requiring thousands of active electromagnets, driving massive heat dissipation directly below temperature-sensitive photoresists.</p>
+          </div>
+        </div>
+
+        <!-- Deep Dive 3 -->
+        <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center space-x-2">
+            <span class="p-2 rounded-lg bg-amber-950 text-amber-400 border border-amber-800"><i data-lucide="droplet" class="w-4 h-4"></i></span>
+            <h4 class="text-sm font-bold text-white">Liquid Hydrogen / LNG Marine Bunkering</h4>
+          </div>
+          <div>
+            <span class="text-[10px] font-mono text-cyan-300 uppercase block">Physics in 1 Sentence:</span>
+            <p class="text-xs text-gray-300">Cryogenic fuel transfer leverages the cold thermal energy of the $-253^\circ\text{C}$ propellant itself to maintain passive HTS superconductivity without auxiliary cooling.</p>
+          </div>
+          <div>
+            <span class="text-[10px] font-mono text-amber-300 uppercase block">Why Incumbents Missed This:</span>
+            <p class="text-xs text-gray-400">Ports viewed extreme cryogenic temperatures as an operational failure hazard causing embrittlement, rather than using the fluid as an infinite heat sink for superconducting stiffness.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Direct Contact CTA -->
+      <div class="p-6 rounded-2xl bg-gray-950 border border-gray-800 text-center space-y-3">
+        <h4 class="text-base font-bold text-white">Inquire Regarding NASA Subcontracting & Commercial Software Licensing</h4>
+        <p class="text-xs text-gray-400 max-w-xl mx-auto">
+          Contact our principal aerospace dynamics & cryogenic levitation engineering team for STTR sub-awards, flight prototype benchmarks, and OEM controller licensing.
+        </p>
+        <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-cyan-600/20 border border-cyan-500/40 text-cyan-300 font-mono text-xs">
+          <i data-lucide="mail" class="w-4 h-4"></i>
+          <a href="mailto:support@rfwavecode.com" class="hover:underline">support@rfwavecode.com</a>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-900 bg-[#020307] py-4 px-6 text-center text-xs text-gray-500 font-mono flex flex-wrap justify-between items-center gap-2">
+    <span>FLUXPIN SYSTEMS INC. · NASA SBIR AREA: CRYOGENIC MECHANISMS</span>
+    <span>CONFIDENTIAL & PROPRIETARY · SUBMITTED TO NASA SBIR 2026</span>
+    <span>UCF CATER PARTNER COLLABORATION</span>
+  </footer>
+
+  <!-- Application Logic & Simulation Engine Script -->
+  <script>
+    // ==========================================
+    // 1. Tab Navigation Routing Engine
+    // ==========================================
+    const tabMapping = {
+      'sim': { viewId: 'viewSim', btnId: 'tabBtnSim' },
+      'physics': { viewId: 'viewPhysics', btnId: 'tabBtnPhysics' },
+      'proposal': { viewId: 'viewProposal', btnId: 'tabBtnProposal' },
+      'arr': { viewId: 'viewARR', btnId: 'tabBtnARR' }
+    };
+
+    function switchTab(activeTabKey) {
+      Object.keys(tabMapping).forEach(key => {
+        const viewEl = document.getElementById(tabMapping[key].viewId);
+        const btnEl = document.getElementById(tabMapping[key].btnId);
+        
+        if (key === activeTabKey) {
+          viewEl.classList.remove('hidden');
+          btnEl.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-white bg-cyan-600/30 border border-cyan-500/50';
+        } else {
+          viewEl.classList.add('hidden');
+          btnEl.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-gray-400 hover:text-white hover:bg-gray-800/50';
+        }
+      });
+
+      // Typeset MathJax dynamically whenever tab changes
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(err => console.debug(err));
+      }
+
+      // Re-initialize canvas and charts if switching back to sim
+      if (activeTabKey === 'sim') {
+        resizeCanvas();
+        if (phaseChart) phaseChart.resize();
+        if (creepChart) creepChart.resize();
+        if (torqueChart) torqueChart.resize();
+      }
+    }
+
+    // ==========================================
+    // 2. Physics & Simulation State
+    // ==========================================
+    const state = {
+      // Physical parameters
+      roverVelTarget: 2.2, // m/s
+      cargoMass: 350,      // kg
+      tempCryo: 77.4,      // Kelvin
+      
+      // Dynamic variables
+      roverX: 180,
+      roverY: 180,
+      sledX: 70,
+      sledY: 180,
+      jointGap: 14.2,      // mm
+      tiltAngle: 1.2,      // deg
+      
+      transverseVel: 0.84, // m/s
+      fluxDensity: 1.18,   // Weber
+      pinningForce: 620,   // Newtons
+      
+      // Control & Safety states
+      autoCorrection: true,
+      fluxSlipAlert: false,
+      chassisBrakingTorque: 0,
+      
+      // Terrain profile
+      terrainOffset: 0,
+      terrainPoints: [],
+      
+      // Dragging simulation interaction
+      isDraggingSled: false
+    };
+
+    // Initialize Lunar Terrain
+    function initTerrain() {
+      state.terrainPoints = [];
+      const numPts = 120;
+      for (let i = 0; i <= numPts; i++) {
+        // Lunar crater topography: layered sine waves + regolith micro-roughness
+        const x = i * 12;
+        const y = 250 + Math.sin(i * 0.15) * 18 + Math.cos(i * 0.05) * 25 + (Math.random() - 0.5) * 3;
+        state.terrainPoints.push({ x, y });
+      }
+    }
+    initTerrain();
+
+    // ==========================================
+    // 3. Canvas Rendering & Physics Update
+    // ==========================================
+    const canvas = document.getElementById('roverCanvas');
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const w = rect.width || 600;
+      const h = rect.height || 360;
+      
+      canvas.width = w * window.devicePixelRatio;
+      canvas.height = h * window.devicePixelRatio;
+      ctx.resetTransform();
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // Mouse Drag on Canvas to interact with Sled
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      // If clicked near sled hitch
+      if (Math.hypot(mx - state.sledX, my - state.sledY) < 60) {
+        state.isDraggingSled = true;
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (state.isDraggingSled) {
+        const rect = canvas.getBoundingClientRect();
+        const my = e.clientY - rect.top;
+        const delta = my - state.sledY;
+        state.transverseVel += delta * 0.08;
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      state.isDraggingSled = false;
+    });
+
+    // Touch support for mobile
+    canvas.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const mx = touch.clientX - rect.left;
+      const my = touch.clientY - rect.top;
+      if (Math.hypot(mx - state.sledX, my - state.sledY) < 70) {
+        state.isDraggingSled = true;
+      }
+    });
+
+    window.addEventListener('touchend', () => {
+      state.isDraggingSled = false;
+    });
+
+    // Simulation Physics Step
+    function stepPhysics() {
+      // 1. Advance terrain
+      state.terrainOffset += state.roverVelTarget * 0.8;
+      if (state.terrainOffset > 12) {
+        state.terrainOffset = 0;
+        state.terrainPoints.shift();
+        const lastPt = state.terrainPoints[state.terrainPoints.length - 1];
+        const nextX = lastPt.x + 12;
+        const i = (nextX / 12);
+        const nextY = 250 + Math.sin(i * 0.15) * 18 + Math.cos(i * 0.05) * 25 + (Math.random() - 0.5) * 3;
+        state.terrainPoints.push({ x: nextX, y: nextY });
+      }
+
+      // 2. Physics calculation for Critical Pinning & Bean model
+      // Base critical field at given temperature: Jc drops as T approaches 92.5 K
+      const tNorm = Math.max(0, (92.5 - state.tempCryo) / (92.5 - 77.0));
+      const baseJc = 4.5e4 * Math.pow(tNorm, 1.3); // A/cm^2
+      
+      // Pinning force maximum capacity
+      const maxPinningCapacity = 850 * (baseJc / 4.5e4); // Newtons
+      
+      // Impact dynamics: relative displacement produces restoration force
+      const displacement = state.sledY - state.roverY;
+      const springConstant = 420; // N/m magnetic stiffness
+      const magneticDamping = 35; // N*s/m
+
+      // Transverse velocity decay or growth
+      const terrainDisturbance = (Math.sin(Date.now() * 0.004) * 0.4 + (Math.random() - 0.5) * 0.25) * (state.roverVelTarget / 2.0);
+      state.transverseVel += terrainDisturbance * 0.12;
+
+      // Closed loop autonomous re-centering
+      if (state.autoCorrection) {
+        if (Math.abs(state.transverseVel) > 0.4 || Math.abs(displacement) > 4) {
+          // Nav CPU calculates counter wheel torque
+          const correctionTorque = -displacement * 28.0 - state.transverseVel * 45.0;
+          state.chassisBrakingTorque = Math.max(-250, Math.min(250, correctionTorque));
+          // Apply wheel braking restoration
+          state.transverseVel += (state.chassisBrakingTorque / (state.cargoMass + 400)) * 0.35;
+        } else {
+          state.chassisBrakingTorque *= 0.85;
+        }
+      } else {
+        state.chassisBrakingTorque = 0;
+      }
+
+      // Natural magnetic spring restoration
+      state.transverseVel += (-displacement * springConstant * 0.0003 - state.transverseVel * magneticDamping * 0.002);
+      state.sledY += state.transverseVel * 0.4;
+      state.sledY = Math.max(140, Math.min(220, state.sledY));
+
+      // Calculate flux density & slip
+      const currentShearForce = Math.abs(state.transverseVel) * (state.cargoMass * 1.8);
+      state.pinningForce = Math.round(maxPinningCapacity - currentShearForce * 0.3);
+      
+      // When shear exceeds pinning threshold, flux leakage occurs
+      const slipThreshold = maxPinningCapacity * 0.78;
+      if (currentShearForce > slipThreshold) {
+        state.fluxSlipAlert = true;
+        state.fluxDensity = Math.max(0.4, state.fluxDensity - 0.008);
+      } else {
+        state.fluxSlipAlert = false;
+        // Self-healing / pinning flux restoration
+        if (state.fluxDensity < 1.25) {
+          state.fluxDensity += 0.004;
+        }
+      }
+
+      // Metric calculations
+      state.jointGap = (14.2 + (state.sledY - state.roverY) * 0.4).toFixed(1);
+      state.tiltAngle = ((state.sledY - state.roverY) * 0.32).toFixed(1);
+
+      // Update UI HUD Text Elements
+      document.getElementById('hudGap').textContent = `${state.jointGap} mm`;
+      document.getElementById('hudTilt').textContent = `${state.tiltAngle}°`;
+      document.getElementById('metricV').textContent = `${Math.abs(state.transverseVel).toFixed(2)} m/s`;
+      document.getElementById('metricPhi').textContent = `${state.fluxDensity.toFixed(2)} Wb`;
+      document.getElementById('metricFp').textContent = `${Math.max(80, state.pinningForce)} N`;
+
+      // Update Top Status Badges
+      const hitchBadge = document.getElementById('hitchStateBadge');
+      const hitchText = document.getElementById('hitchStateText');
+      const alarmBanner = document.getElementById('alarmBanner');
+
+      if (state.fluxSlipAlert) {
+        hitchBadge.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-full border border-rose-500/70 bg-rose-950/60 text-rose-300 text-xs font-mono font-medium neon-border-rose';
+        hitchText.textContent = 'WARNING: FLUX SLIP DETECTED';
+        alarmBanner.classList.remove('hidden');
+      } else if (Math.abs(state.transverseVel) > 0.8) {
+        hitchBadge.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-full border border-amber-500/70 bg-amber-950/60 text-amber-300 text-xs font-mono font-medium neon-border-amber';
+        hitchText.textContent = 'DAMPING TRANSIENT IMPULSE';
+        alarmBanner.classList.add('hidden');
+      } else {
+        hitchBadge.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-full border border-emerald-500/40 bg-emerald-950/40 text-emerald-400 text-xs font-mono font-medium';
+        hitchText.textContent = 'PINNED · NOMINAL LEVITATION';
+        alarmBanner.classList.add('hidden');
+      }
+    }
+
+    // Render Canvas Frame
+    function renderCanvas() {
+      const w = canvas.parentElement.clientWidth || 600;
+      const h = canvas.parentElement.clientHeight || 360;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 1. Draw Starfield & Lunar Horizon Gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+      skyGrad.addColorStop(0, '#03050a');
+      skyGrad.addColorStop(0.7, '#070d1a');
+      skyGrad.addColorStop(1, '#0e1726');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Stars in lunar vacuum
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      for (let s = 0; s < 35; s++) {
+        const sx = ((s * 47) % w);
+        const sy = ((s * 29) % (h * 0.5));
+        ctx.fillRect(sx, sy, 1.2, 1.2);
+      }
+
+      // 2. Draw Lunar Crater Surface (Regolith)
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      for (let i = 0; i < state.terrainPoints.length; i++) {
+        const pt = state.terrainPoints[i];
+        const screenX = pt.x - state.terrainOffset;
+        if (i === 0) ctx.lineTo(screenX, pt.y);
+        else ctx.lineTo(screenX, pt.y);
+      }
+      ctx.lineTo(w, h);
+      ctx.closePath();
+      
+      const groundGrad = ctx.createLinearGradient(0, 200, 0, h);
+      groundGrad.addColorStop(0, '#1f2937');
+      groundGrad.addColorStop(0.3, '#111827');
+      groundGrad.addColorStop(1, '#090d16');
+      ctx.fillStyle = groundGrad;
+      ctx.fill();
+
+      // Regolith surface rim highlight
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      // 3. Draw Rover Chassis (Towing Vehicle)
+      const roverX = w * 0.62;
+      const roverY = 190;
+
+      // Rover Wheels (High-mobility lunar mesh wheels)
+      ctx.fillStyle = '#334155';
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 2;
+
+      // Rear Rover Wheel
+      ctx.beginPath();
+      ctx.arc(roverX - 35, roverY + 36, 18, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      // Front Rover Wheel
+      ctx.beginPath();
+      ctx.arc(roverX + 45, roverY + 36, 18, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+
+      // Rover Body
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(roverX - 50, roverY - 15, 110, 42, 8);
+      ctx.fill(); ctx.stroke();
+
+      // Rover Solar / Avionics Mast
+      ctx.strokeStyle = '#64748b';
+      ctx.beginPath();
+      ctx.moveTo(roverX + 20, roverY - 15);
+      ctx.lineTo(roverX + 25, roverY - 45);
+      ctx.lineTo(roverX + 40, roverY - 45);
+      ctx.stroke();
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(roverX + 15, roverY - 48, 14, 5);
+
+      // Rover Label
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '9px JetBrains Mono';
+      ctx.fillText('ARTEMIS LTV ROVER', roverX - 35, roverY + 8);
+
+      // 4. Draw Hitch Mounting Stanchion on Rover
+      const htsPuckX = roverX - 65;
+      const htsPuckY = roverY + 5;
+
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(roverX - 50, roverY + 8);
+      ctx.lineTo(htsPuckX, htsPuckY);
+      ctx.stroke();
+
+      // Cryostat Cryo-Cooler Puck (HTS YBCO Block)
+      ctx.fillStyle = '#083344';
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(htsPuckX - 10, htsPuckY - 16, 20, 32, 4);
+      ctx.fill(); ctx.stroke();
+      
+      // HTS Glow effect
+      ctx.fillStyle = 'rgba(6, 182, 212, 0.4)';
+      ctx.beginPath();
+      ctx.arc(htsPuckX, htsPuckY, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5. Draw Cargo Sled (Towed Trailer)
+      const sledX = w * 0.28;
+      const sledY = state.sledY;
+
+      // Sled Ski Skids (Lunar low-friction skis)
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(sledX - 55, sledY + 36);
+      ctx.lineTo(sledX + 45, sledY + 36);
+      ctx.lineTo(sledX + 55, sledY + 28);
+      ctx.stroke();
+
+      // Sled Cargo Tub
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(sledX - 50, sledY - 10, 95, 38, 6);
+      ctx.fill(); ctx.stroke();
+
+      // Regolith Cargo Payload Boxes
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(sledX - 40, sledY - 24, 30, 14);
+      ctx.fillRect(sledX - 6, sledY - 28, 38, 18);
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = '8px JetBrains Mono';
+      ctx.fillText(`${state.cargoMass}kg CARGO`, sledX - 35, sledY + 12);
+
+      // Sled Hitch Tongue & Permanent Magnet Puck
+      const magnetPuckX = sledX + 60;
+      const magnetPuckY = sledY + 5;
+
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(sledX + 45, sledY + 8);
+      ctx.lineTo(magnetPuckX, magnetPuckY);
+      ctx.stroke();
+
+      // Permanent NdFeB Magnet Puck (Red/Blue Poles)
+      ctx.fillStyle = '#b91c1c'; // North
+      ctx.fillRect(magnetPuckX - 6, magnetPuckY - 14, 12, 14);
+      ctx.fillStyle = '#1d4ed8'; // South
+      ctx.fillRect(magnetPuckX - 6, magnetPuckY, 12, 14);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(magnetPuckX - 6, magnetPuckY - 14, 12, 28);
+
+      // 6. Draw Flux-Pinning Trapped Vortices (Lines of Flux in Non-Contact Gap)
+      const gapDist = htsPuckX - magnetPuckX;
+      ctx.save();
+      const numLines = 7;
+      for (let l = 0; l < numLines; l++) {
+        const offsetProg = (l - (numLines - 1) / 2) * 4.2;
+        ctx.beginPath();
+        ctx.moveTo(magnetPuckX + 6, magnetPuckY + offsetProg);
+        
+        // Curved flux path pinned into the superconductor
+        const cpx = (magnetPuckX + htsPuckX) / 2;
+        const cpy = ((magnetPuckY + htsPuckY) / 2) + offsetProg * 1.6 + Math.sin(Date.now() * 0.01 + l) * 2;
+        ctx.quadraticCurveTo(cpx, cpy, htsPuckX - 10, htsPuckY + offsetProg * 0.7);
+        
+        if (state.fluxSlipAlert) {
+          ctx.strokeStyle = `rgba(239, 68, 68, ${0.4 + Math.sin(Date.now() * 0.03 + l) * 0.3})`;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 3]);
+        } else {
+          ctx.strokeStyle = `rgba(34, 211, 238, ${0.45 + (state.fluxDensity / 1.5) * 0.4})`;
+          ctx.lineWidth = 1.6;
+          ctx.setLineDash([]);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 7. Wheel Torque Vectoring Overlay Arrows if actively braking
+      if (Math.abs(state.chassisBrakingTorque) > 15) {
+        ctx.fillStyle = '#10b981';
+        ctx.font = '10px JetBrains Mono';
+        const torqueDir = state.chassisBrakingTorque > 0 ? '▲ +Δτ COUNTER-TORQUE' : '▼ -Δτ COUNTER-TORQUE';
+        ctx.fillText(`${torqueDir} (${Math.round(state.chassisBrakingTorque)} N·m)`, roverX - 45, roverY - 26);
+        
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(roverX - 10, roverY - 22);
+        ctx.lineTo(roverX + 15, roverY - 22);
+        ctx.stroke();
+      }
+    }
+
+    // ==========================================
+    // 4. Chart.js Telemetry Initializations
+    // ==========================================
+    let phaseChart, creepChart, torqueChart;
+
+    function initCharts() {
+      // ----------------------------------------
+      // A. Primary Diagnostic: v vs. Φ Scatter Plot
+      // ----------------------------------------
+      const ctxPhase = document.getElementById('phaseSpaceChart').getContext('2d');
+      
+      // Generate Nominal Corridor boundary curve
+      const nominalCurve = [];
+      const hazardBoundary = [];
+      for (let v = 0; v <= 4.0; v += 0.2) {
+        // Ideal pinned state: Bean critical field curve
+        const phiNom = 1.45 * Math.exp(-0.18 * v);
+        nominalCurve.push({ x: v, y: phiNom });
+        // Hazard threshold below which slip happens
+        const phiHazard = 0.85 * Math.exp(-0.25 * v);
+        hazardBoundary.push({ x: v, y: phiHazard });
+      }
+
+      phaseChart = new Chart(ctxPhase, {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              label: 'Hazard Slip Zone',
+              data: hazardBoundary,
+              borderColor: 'rgba(239, 68, 68, 0.8)',
+              borderDash: [6, 4],
+              showLine: true,
+              fill: 'start',
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+              pointRadius: 0
+            },
+            {
+              label: 'Nominal Pinning Corridor',
+              data: nominalCurve,
+              borderColor: 'rgba(6, 182, 212, 0.7)',
+              showLine: true,
+              borderWidth: 2,
+              fill: false,
+              pointRadius: 0
+            },
+            {
+              label: 'Live Hitch State (v, Φ)',
+              data: [{ x: state.transverseVel, y: state.fluxDensity }],
+              backgroundColor: '#a855f7',
+              borderColor: '#ffffff',
+              borderWidth: 2,
+              pointRadius: 8,
+              pointHoverRadius: 10
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 0 },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Transverse Relative Velocity v (m/s)',
+                color: '#94a3b8',
+                font: { family: 'JetBrains Mono', size: 10 }
+              },
+              grid: { color: 'rgba(51, 65, 85, 0.3)' },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 9 } },
+              min: 0,
+              max: 3.5
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Trapped Magnetic Flux Φ (Weber)',
+                color: '#94a3b8',
+                font: { family: 'JetBrains Mono', size: 10 }
+              },
+              grid: { color: 'rgba(51, 65, 85, 0.3)' },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 9 } },
+              min: 0.2,
+              max: 1.6
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: '#94a3b8',
+                font: { family: 'JetBrains Mono', size: 10 },
+                boxWidth: 12
+              }
+            }
+          }
+        }
+      });
+
+      // ----------------------------------------
+      // B. Secondary Chart 1: Flux Creep & Slip
+      // ----------------------------------------
+      const ctxCreep = document.getElementById('fluxCreepChart').getContext('2d');
+      const timeLabels = Array.from({ length: 30 }, (_, i) => `-${30 - i}s`);
+      const dummyCreep = Array(30).fill(0.04);
+
+      creepChart = new Chart(ctxCreep, {
+        type: 'line',
+        data: {
+          labels: timeLabels,
+          datasets: [{
+            label: 'Flux Creep Rate dΦ/dt (Wb/s)',
+            data: dummyCreep,
+            borderColor: '#22d3ee',
+            backgroundColor: 'rgba(34, 211, 238, 0.1)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 1.5,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: { display: false },
+            y: {
+              grid: { color: 'rgba(51, 65, 85, 0.3)' },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 9 } },
+              min: -0.05,
+              max: 0.25
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+
+      // ----------------------------------------
+      // C. Secondary Chart 2: Wheel Vector Torque
+      // ----------------------------------------
+      const ctxTorque = document.getElementById('torqueChart').getContext('2d');
+      const dummyTorque = Array(30).fill(0);
+
+      torqueChart = new Chart(ctxTorque, {
+        type: 'line',
+        data: {
+          labels: timeLabels,
+          datasets: [{
+            label: 'Torque Compensation (N·m)',
+            data: dummyTorque,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.2,
+            borderWidth: 1.5,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: { display: false },
+            y: {
+              grid: { color: 'rgba(51, 65, 85, 0.3)' },
+              ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 9 } },
+              min: -200,
+              max: 200
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    // Update charts periodically (Throttled for performance)
+    let chartTickCounter = 0;
+    function updateCharts() {
+      chartTickCounter++;
+      if (chartTickCounter % 4 !== 0) return; // Update every 4 ticks (~15 Hz)
+
+      // Update Phase-Space live point
+      if (phaseChart) {
+        phaseChart.data.datasets[2].data = [
+          { x: Math.abs(state.transverseVel), y: state.fluxDensity }
+        ];
+        phaseChart.update();
+      }
+
+      // Update Time Series
+      if (creepChart && torqueChart) {
+        const creepVal = state.fluxSlipAlert ? (0.12 + Math.random() * 0.08) : (0.01 + Math.random() * 0.02);
+        creepChart.data.datasets[0].data.shift();
+        creepChart.data.datasets[0].data.push(creepVal);
+        creepChart.update();
+
+        torqueChart.data.datasets[0].data.shift();
+        torqueChart.data.datasets[0].data.push(state.chassisBrakingTorque);
+        torqueChart.update();
+      }
+    }
+
+    // ==========================================
+    // 5. Interactive Fault Injection & Controls
+    // ==========================================
+    function injectCraterDrop() {
+      // Simulate sudden drop into crater rille: high transverse delta
+      state.sledY += 28;
+      state.transverseVel += 2.2;
+      state.fluxDensity = Math.max(0.42, state.fluxDensity - 0.35);
+    }
+
+    function injectBoulderSlam() {
+      // Lateral boulder impact impulse
+      state.transverseVel = (Math.random() > 0.5 ? 2.8 : -2.8);
+      state.fluxDensity = Math.max(0.38, state.fluxDensity - 0.42);
+    }
+
+    function emergencyResetPinning() {
+      // Force Field-Cooled state reset
+      state.sledY = state.roverY;
+      state.transverseVel = 0;
+      state.fluxDensity = 1.32;
+      state.chassisBrakingTorque = 0;
+      state.fluxSlipAlert = false;
+      document.getElementById('alarmBanner').classList.add('hidden');
+    }
+
+    function toggleAutoCorrection() {
+      state.autoCorrection = !state.autoCorrection;
+      const btn = document.getElementById('toggleObserverBtn');
+      if (state.autoCorrection) {
+        btn.textContent = 'ACTIVE (CLOSED-LOOP)';
+        btn.className = 'px-3 py-1 rounded-lg text-xs font-mono font-bold bg-cyan-600/30 text-cyan-300 border border-cyan-500/60';
+      } else {
+        btn.textContent = 'DISABLED (OPEN-LOOP)';
+        btn.className = 'px-3 py-1 rounded-lg text-xs font-mono font-bold bg-rose-950/60 text-rose-400 border border-rose-500/60';
+      }
+    }
+
+    function updateControls() {
+      const vInput = document.getElementById('inputVelocity');
+      const mInput = document.getElementById('inputMass');
+      const tInput = document.getElementById('inputTemp');
+
+      state.roverVelTarget = parseFloat(vInput.value);
+      state.cargoMass = parseFloat(mInput.value);
+      state.tempCryo = parseFloat(tInput.value);
+
+      document.getElementById('sliderVelVal').textContent = `${state.roverVelTarget.toFixed(1)} m/s (${(state.roverVelTarget * 3.6).toFixed(1)} km/h)`;
+      document.getElementById('sliderMassVal').textContent = `${state.cargoMass} kg`;
+      document.getElementById('sliderTempVal').textContent = `${state.tempCryo.toFixed(1)} K`;
+
+      // Recalculate reserve margin
+      const reserve = Math.max(10, Math.round(((92.5 - state.tempCryo) / 15.5) * 88));
+      const marginEl = document.getElementById('fieldReserveTxt');
+      marginEl.textContent = `${reserve}% (Margin > ${(reserve / 25).toFixed(1)}×)`;
+      if (reserve < 35) {
+        marginEl.className = 'text-rose-400 font-bold';
+      } else {
+        marginEl.className = 'text-emerald-400 font-bold';
+      }
+    }
+
+    // ==========================================
+    // 6. Main Animation Loop (High-DPI 60 FPS)
+    // ==========================================
+    let lastTime = performance.now();
+    let frameCount = 0;
+    let fps = 60;
+
+    function gameLoop(now) {
+      stepPhysics();
+      renderCanvas();
+      updateCharts();
+
+      // FPS counter
+      frameCount++;
+      if (now - lastTime >= 1000) {
+        fps = frameCount;
+        frameCount = 0;
+        lastTime = now;
+        document.getElementById('canvasFpsBadge').textContent = `FPS: ${fps}`;
+      }
+
+      animationFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    // Window Onload Initialization
+    window.onload = function() {
+      // 1. Initialize Lucide Icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      // 2. Setup Canvas
+      resizeCanvas();
+
+      // 3. Setup Charts
+      initCharts();
+
+      // 4. Start Physics & Animation Loop
+      animationFrameId = requestAnimationFrame(gameLoop);
+
+      // 5. Typeset MathJax
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise().catch(err => console.debug(err));
+      }
+    };
+  </script>
+</body>
+</html>
